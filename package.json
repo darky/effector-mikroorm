@@ -1,0 +1,38 @@
+{
+  "name": "effector-mikroorm",
+  "version": "0.0.0",
+  "description": "Persist Effector Stores as MikroORM Entities",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:darky/effector-mikroorm.git"
+  },
+  "keywords": [
+    "effector",
+    "mikroorm",
+    "mikro",
+    "orm"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
+    "prepublishOnly": "npm run build",
+    "test": "npm run build && node --test dist/test.js"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts"
+  ],
+  "author": "Vladislav Botvin",
+  "license": "MIT",
+  "dependencies": {
+    "@mikro-orm/core": "^5.7.10",
+    "effector": "^22.8.6",
+    "ts-fp-di": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.2.3",
+    "typescript": "5.0.4"
+  }
+}
