@@ -2,7 +2,7 @@ import { Entity, MikroORM, PrimaryKey, Property } from '@mikro-orm/core'
 import { defineConfig } from '@mikro-orm/better-sqlite'
 import test, { afterEach, beforeEach } from 'node:test'
 import { createEvent, createStore } from 'effector'
-import { sideEffect, wrapEffectorMikroorm } from './index.js'
+import { sideEffect, wrapEffectorMikroorm } from './index'
 import assert from 'node:assert'
 
 let orm: MikroORM
