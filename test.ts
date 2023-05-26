@@ -1,4 +1,4 @@
-import { Entity, EventArgs, EventSubscriber, MikroORM, PrimaryKey, Property } from '@mikro-orm/core'
+import { Entity, EventArgs, EventSubscriber, MikroORM, PrimaryKey, Property, wrap } from '@mikro-orm/core'
 import { defineConfig } from '@mikro-orm/better-sqlite'
 import test, { afterEach, beforeEach } from 'node:test'
 import { combine, createEffect, createEvent, createStore } from 'effector'
@@ -136,7 +136,7 @@ test('persistance works for event -> store (updating case)', async () => {
 
   await wrapEffectorMikroorm(orm, async () => {
     const exists = await em().findOne(TestEntity, { id: 1 })
-    exists && (exists.value = 'test2')
+    wrap(exists).assign({ value: 'test2' })
     await sideEffect(createTestEntity, exists)
   })
 
@@ -150,7 +150,7 @@ test('persistance works for event -> store (deleting case)', async () => {
 
   await wrapEffectorMikroorm(orm, async () => {
     const exists = await em().findOne(TestEntity, { id: 1 })
-    exists && (exists.$forDelete = true)
+    wrap(exists).assign({ $forDelete: true })
     await sideEffect(createTestEntity, exists)
   })
 
