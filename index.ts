@@ -90,6 +90,10 @@ const persistIfEntity = (maybeEntity: unknown) => {
       (Object.getPrototypeOf(maybeEntity ?? {}) as { constructor: unknown }).constructor
     )
   ) {
-    em.persist(maybeEntity as object)
+    if ((maybeEntity as { $forDelete: boolean }).$forDelete) {
+      em.remove(maybeEntity as object)
+    } else {
+      em.persist(maybeEntity as object)
+    }
   }
 }

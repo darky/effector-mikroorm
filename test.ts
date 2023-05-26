@@ -19,6 +19,8 @@ class TestEntity {
 
   @Property()
   value!: string
+
+  $forDelete?: boolean
 }
 
 @Entity()
@@ -138,6 +140,19 @@ test('persistance works for event -> store (updating case)', async () => {
   const persisted = await orm.em.fork().findOne(TestEntity, { id: 1 })
   assert.strictEqual(persisted?.id, 1)
   assert.strictEqual(persisted?.value, 'test2')
+})
+
+test('persistance works for event -> store (deleting case)', async () => {
+  await orm.em.fork().persistAndFlush(new TestEntity({ id: 1, value: 'test' }))
+
+  await wrapEffectorMikroorm(orm, async () => {
+    const exists = await em().findOne(TestEntity, { id: 1 })
+    exists && (exists.$forDelete = true)
+    await sideEffect(createTestEntity, exists)
+  })
+
+  const persisted = await orm.em.fork().findOne(TestEntity, { id: 1 })
+  assert.strictEqual(persisted, null)
 })
 
 test('persistance works for fx -> store', async () => {
