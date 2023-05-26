@@ -1,11 +1,20 @@
 import { EntityManager, MikroORM } from '@mikro-orm/core'
 import { Effect, EffectParams, EffectResult, Scope, Unit, is } from 'effector'
-import { fork, serialize, allSettled } from 'effector'
+import { fork, allSettled } from 'effector'
 import { diDep, diInit, diSet } from 'ts-fp-di'
 
 const EFFECTOR_MIKROORM_DOMAIN = 'effector-mikroorm-domain'
 const EFFECTOR_MIKROORM_EM = 'effector-mikroorm-em'
 const EFFECTOR_MIKROORM_ENTITIES = 'effector-mikroorm-entities'
+
+type ScopeReg = {
+  [key: string]: {
+    current: unknown
+    meta: {
+      op: 'store' | 'other'
+    }
+  }
+}
 
 export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void>) => {
   await diInit(async () => {
@@ -18,7 +27,11 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
 
     await cb()
 
-    persistIfEntity(Object.values(serialize(domain, { onlyChanges: true })))
+    persistIfEntity(
+      Object.values((domain as unknown as { reg: ScopeReg }).reg)
+        .filter(val => val.meta.op === 'store')
+        .map(val => val.current)
+    )
 
     await em.flush()
   })
