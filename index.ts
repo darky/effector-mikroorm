@@ -71,8 +71,6 @@ export async function sideEffect(unit: any, params?: any) {
 
     return resp.value
   }
-
-  return resp
 }
 
 export const em = () => diDep<EntityManager>(EFFECTOR_MIKROORM_EM)
