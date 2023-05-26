@@ -20,8 +20,22 @@ class TestEntity {
   value!: string
 }
 
+@Entity()
+class TestProjectionViaMapEntity {
+  constructor(ent: TestProjectionViaMapEntity) {
+    Object.entries(ent).forEach(([key, val]) => Reflect.set(this, key, val))
+  }
+
+  @PrimaryKey()
+  id!: number
+
+  @Property()
+  value!: string
+}
+
 const createTestEntity = createEvent<TestEntity>()
 const $store = createStore<TestEntity | null>(null, { sid: '$store' })
+$store.map(ent => (ent ? new TestProjectionViaMapEntity({ ...ent, value: `${ent.value} projection` }) : ent))
 
 beforeEach(async () => {
   orm = await MikroORM.init(
@@ -29,7 +43,7 @@ beforeEach(async () => {
       // dbName: 'test.sqlite',
       dbName: ':memory:',
       debug: true,
-      entities: [TestEntity],
+      entities: [TestEntity, TestProjectionViaMapEntity],
     })
   )
   await orm.getSchemaGenerator().dropSchema()
@@ -43,7 +57,7 @@ afterEach(async () => {
   await orm.close()
 })
 
-test('persistance works on event <-> store', async () => {
+test('persistance works on event -> store', async () => {
   $store.on(createTestEntity, (_, entity) => entity)
 
   await wrapEffectorMikroorm(orm, async () => {
@@ -53,4 +67,16 @@ test('persistance works on event <-> store', async () => {
   const persisted = await orm.em.fork().findOne(TestEntity, { id: 1 })
   assert.strictEqual(persisted?.id, 1)
   assert.strictEqual(persisted?.value, 'test')
+})
+
+test('persistance works on event -> store -> store.map', async () => {
+  $store.on(createTestEntity, (_, entity) => entity)
+
+  await wrapEffectorMikroorm(orm, async () => {
+    await sideEffect(createTestEntity, new TestEntity({ id: 1, value: 'test' }))
+  })
+
+  const persisted = await orm.em.fork().findOne(TestProjectionViaMapEntity, { id: 1 })
+  assert.strictEqual(persisted?.id, 1)
+  assert.strictEqual(persisted?.value, 'test projection')
 })
