@@ -1,4 +1,12 @@
-import { Entity, EventArgs, EventSubscriber, MikroORM, PrimaryKey, Property } from '@mikro-orm/core'
+import {
+  Entity,
+  EventArgs,
+  EventSubscriber,
+  MikroORM,
+  OptimisticLockError,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/core'
 import { defineConfig } from '@mikro-orm/better-sqlite'
 import test, { afterEach, beforeEach } from 'node:test'
 import { combine, createEffect, createEvent, createStore } from 'effector'
@@ -19,6 +27,9 @@ class TestEntity {
 
   @Property()
   value!: string
+
+  @Property({ version: true })
+  version!: number
 
   $forDelete?: boolean
 }
@@ -216,4 +227,22 @@ test('persistance works for event -> store -> combine', async () => {
   const persisted = await orm.em.fork().findOne(TestProjectionViaCombineEntity, { id: 1 })
   assert.strictEqual(persisted?.id, 1)
   assert.strictEqual(persisted?.value, 'test | test projection')
+})
+
+test('optimistic lock', async () => {
+  await orm.em.fork().persistAndFlush(new TestEntity({ id: 1, value: 'test' }))
+
+  await assert.rejects(async () => {
+    await wrapEffectorMikroorm(orm, async () => {
+      const exists = await em().findOne(TestEntity, { id: 1 })
+      exists && (exists.value = 'test2')
+      await orm.em.fork().nativeUpdate(TestEntity, { id: 1 }, { value: 'test3' })
+      await sideEffect(createTestEntity, exists)
+    })
+  })
+
+  const persisted = await orm.em.fork().findOne(TestEntity, { id: 1 })
+  assert.strictEqual(persisted?.id, 1)
+  assert.strictEqual(persisted?.value, 'test3')
+  assert.strictEqual(persisted?.version, 2)
 })
