@@ -1,6 +1,7 @@
 import { EntityManager, MikroORM } from '@mikro-orm/core'
 import { Effect, EffectParams, EffectResult, Scope, Unit, is } from 'effector'
 import { fork, allSettled } from 'effector'
+import { inspect } from 'effector/inspect'
 import { diDep, diInit, diSet } from 'ts-fp-di'
 
 const EFFECTOR_MIKROORM_DOMAIN = 'effector-mikroorm-domain'
@@ -19,6 +20,15 @@ type ScopeReg = {
 export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void>) => {
   await diInit(async () => {
     const domain = fork()
+    let error!: Error
+
+    inspect({
+      scope: domain,
+      fn: m => {
+        m.type === 'error' && (error = m.error as Error)
+      },
+    })
+
     const em = orm.em.fork()
 
     diSet(EFFECTOR_MIKROORM_DOMAIN, domain)
@@ -26,6 +36,10 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
     diSet(EFFECTOR_MIKROORM_ENTITIES, new Set(orm.config.get('entities')))
 
     await cb()
+
+    if (error) {
+      throw error
+    }
 
     persistIfEntity(
       Object.values((domain as unknown as { reg: ScopeReg }).reg)
@@ -72,7 +86,7 @@ const persistIfEntity = (maybeEntity: unknown) => {
 
   if (
     diDep<Set<unknown>>(EFFECTOR_MIKROORM_ENTITIES).has(
-      (Object.getPrototypeOf(maybeEntity) as { constructor: unknown }).constructor
+      (Object.getPrototypeOf(maybeEntity ?? {}) as { constructor: unknown }).constructor
     )
   ) {
     em.persist(maybeEntity as object)
