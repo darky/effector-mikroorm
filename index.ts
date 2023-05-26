@@ -11,7 +11,7 @@ const EFFECTOR_MIKROORM_ENTITIES = 'effector-mikroorm-entities'
 type ScopeReg = {
   [key: string]: {
     current: unknown
-    meta: {
+    meta?: {
       op: 'store' | 'other'
     }
   }
@@ -43,7 +43,7 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
 
     persistIfEntity(
       Object.values((domain as unknown as { reg: ScopeReg }).reg)
-        .filter(val => val.meta.op === 'store')
+        .filter(val => val.meta?.op === 'store')
         .map(val => val.current)
     )
 
