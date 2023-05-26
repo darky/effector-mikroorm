@@ -1,12 +1,4 @@
-import {
-  Entity,
-  EventArgs,
-  EventSubscriber,
-  MikroORM,
-  OptimisticLockError,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/core'
+import { Entity, EventArgs, EventSubscriber, MikroORM, PrimaryKey, Property } from '@mikro-orm/core'
 import { defineConfig } from '@mikro-orm/better-sqlite'
 import test, { afterEach, beforeEach } from 'node:test'
 import { combine, createEffect, createEvent, createStore } from 'effector'
