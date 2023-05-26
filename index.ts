@@ -5,6 +5,7 @@ import { diDep, diInit, diSet } from 'ts-fp-di'
 
 const EFFECTOR_MIKROORM_DOMAIN = 'effector-mikroorm-domain'
 const EFFECTOR_MIKROORM_EM = 'effector-mikroorm-em'
+const EFFECTOR_MIKROORM_ENTITIES = 'effector-mikroorm-entities'
 
 export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void>) => {
   await diInit(async () => {
@@ -13,6 +14,7 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
 
     diSet(EFFECTOR_MIKROORM_DOMAIN, domain)
     diSet(EFFECTOR_MIKROORM_EM, em)
+    diSet(EFFECTOR_MIKROORM_ENTITIES, new Set(orm.config.get('entities')))
 
     await cb()
 
@@ -56,9 +58,10 @@ const persistIfEntity = (maybeEntity: unknown) => {
   const em = diDep<EntityManager>(EFFECTOR_MIKROORM_EM)
 
   if (
-    maybeEntity &&
-    em.config.get('entities').find(EntityClass => EntityClass instanceof Function && maybeEntity instanceof EntityClass)
+    diDep<Set<unknown>>(EFFECTOR_MIKROORM_ENTITIES).has(
+      (Object.getPrototypeOf(maybeEntity) as { constructor: unknown }).constructor
+    )
   ) {
-    em.persist(maybeEntity)
+    em.persist(maybeEntity as object)
   }
 }
