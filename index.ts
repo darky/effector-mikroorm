@@ -82,18 +82,18 @@ const persistIfEntity = (maybeEntity: unknown) => {
   if (Array.isArray(maybeEntity)) {
     return maybeEntity.forEach(persistIfEntity)
   }
+  if (!isEntity(maybeEntity)) {
+    return
+  }
 
-  const em = diDep<EntityManager>(EFFECTOR_MIKROORM_EM)
-
-  if (
-    diDep<Set<unknown>>(EFFECTOR_MIKROORM_ENTITIES).has(
-      (Object.getPrototypeOf(maybeEntity ?? {}) as { constructor: unknown }).constructor
-    )
-  ) {
-    if ((maybeEntity as { $forDelete: boolean }).$forDelete) {
-      em.remove(maybeEntity as object)
-    } else {
-      em.persist(maybeEntity as object)
-    }
+  if (maybeEntity.$forDelete) {
+    diDep<EntityManager>(EFFECTOR_MIKROORM_EM).remove(maybeEntity)
+  } else {
+    diDep<EntityManager>(EFFECTOR_MIKROORM_EM).persist(maybeEntity)
   }
 }
+
+const isEntity = (maybeEntity: unknown): maybeEntity is { $forDelete?: boolean; [key: string]: unknown } =>
+  diDep<Set<unknown>>(EFFECTOR_MIKROORM_ENTITIES).has(
+    (Object.getPrototypeOf(maybeEntity ?? {}) as { constructor: unknown }).constructor
+  )
