@@ -126,6 +126,20 @@ test('persistance works for event -> store (multiple entities)', async () => {
   assert.strictEqual(persisted[1]?.value, 'test2')
 })
 
+test('persistance works for event -> store (updating case)', async () => {
+  await orm.em.fork().persistAndFlush(new TestEntity({ id: 1, value: 'test' }))
+
+  await wrapEffectorMikroorm(orm, async () => {
+    const exists = await em().findOne(TestEntity, { id: 1 })
+    exists && (exists.value = 'test2')
+    await sideEffect(createTestEntity, exists)
+  })
+
+  const persisted = await orm.em.fork().findOne(TestEntity, { id: 1 })
+  assert.strictEqual(persisted?.id, 1)
+  assert.strictEqual(persisted?.value, 'test2')
+})
+
 test('persistance works for fx -> store', async () => {
   await wrapEffectorMikroorm(orm, async () => {
     await sideEffect(createTestEntityFx)
