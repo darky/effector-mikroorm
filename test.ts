@@ -2,7 +2,7 @@ import { Entity, EventArgs, EventSubscriber, MikroORM, PrimaryKey, Property } fr
 import { defineConfig } from '@mikro-orm/better-sqlite'
 import test, { afterEach, beforeEach } from 'node:test'
 import { combine, createEffect, createEvent, createStore } from 'effector'
-import { em, sideEffect, wrapEffectorMikroorm } from './index'
+import { em, entityConstructor, sideEffect, wrapEffectorMikroorm } from './index'
 import assert from 'node:assert'
 
 let orm: MikroORM
@@ -11,7 +11,7 @@ let insertedEntitiesViaEvent: unknown[] = []
 @Entity()
 class TestEntity {
   constructor(ent: Partial<TestEntity>) {
-    Object.entries(ent).forEach(([key, val]) => Reflect.set(this, key, val))
+    entityConstructor(this, ent)
   }
 
   @PrimaryKey()
@@ -24,7 +24,7 @@ class TestEntity {
 @Entity()
 class TestProjectionViaMapEntity {
   constructor(ent: TestProjectionViaMapEntity) {
-    Object.entries(ent).forEach(([key, val]) => Reflect.set(this, key, val))
+    entityConstructor(this, ent)
   }
 
   @PrimaryKey()
@@ -37,7 +37,7 @@ class TestProjectionViaMapEntity {
 @Entity()
 class TestProjectionViaCombineEntity {
   constructor(ent: TestProjectionViaCombineEntity) {
-    Object.entries(ent).forEach(([key, val]) => Reflect.set(this, key, val))
+    entityConstructor(this, ent)
   }
 
   @PrimaryKey()

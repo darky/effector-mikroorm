@@ -77,6 +77,9 @@ export async function sideEffect(unit: any, params?: any) {
 
 export const em = () => diDep<EntityManager>(EFFECTOR_MIKROORM_EM)
 
+export const entityConstructor = <T extends object>(self: T, ent: T) =>
+  Object.entries(ent).forEach(([key, val]) => Reflect.set(self, key, val))
+
 const persistIfEntity = (maybeEntity: unknown) => {
   if (Array.isArray(maybeEntity)) {
     return maybeEntity.forEach(persistIfEntity)
