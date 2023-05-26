@@ -24,14 +24,14 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
 
 export function sideEffect<FX extends Effect<any, any, any>>(
   unit: FX,
-  config?: { params: EffectParams<FX> }
+  params?: EffectParams<FX>
 ): Promise<EffectResult<FX>>
 
-export function sideEffect<T>(unit: Unit<T>, config?: { params: T }): Promise<unknown>
+export function sideEffect<T>(unit: Unit<T>, params?: T): Promise<unknown>
 
-export async function sideEffect(unit: any, config?: any) {
+export async function sideEffect(unit: any, params?: any) {
   const resp = await allSettled(unit, {
-    ...config,
+    params,
     scope: diDep<Scope>(EFFECTOR_MIKROORM_DOMAIN),
   })
 

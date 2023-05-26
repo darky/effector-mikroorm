@@ -47,7 +47,7 @@ test('persistance works on event <-> store', async () => {
   $store.on(createTestEntity, (_, entity) => entity)
 
   await wrapEffectorMikroorm(orm, async () => {
-    await sideEffect(createTestEntity, { params: new TestEntity({ id: 1, value: 'test' }) })
+    await sideEffect(createTestEntity, new TestEntity({ id: 1, value: 'test' }))
   })
 
   const persisted = await orm.em.fork().findOne(TestEntity, { id: 1 })
