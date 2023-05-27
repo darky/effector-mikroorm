@@ -37,6 +37,7 @@ import { em, entityConstructor, sideEffect, wrapEffectorMikroorm } from 'effecto
 @Entity()
 class UserEntity {
   constructor(entity: Partial<UserEntity>) {
+    // just little sugar, for avoiding boilerplate this.key = value
     entityConstructor(this, entity)
   }
 
@@ -46,10 +47,15 @@ class UserEntity {
   @Property()
   name!: string
 
+  // service property for deleting Entity, see below
   $forDelete?: boolean
 }
 
-const fetchUserFx = createEffect(async (id: number) => em().findOne(UserEntity, { id }))
+const fetchUserFx = createEffect(async (id: number) => {
+  // `em()` will return MikroORM Entity Manager for appropriate life cycle
+  // need use `em()` everywhere, when you want to use MikroORM API
+  return em().findOne(UserEntity, { id })
+})
 const createUser = createEvent<UserEntity>()
 const updateUser = createEvent<UserEntity>()
 const deleteUser = createEvent<number>()
@@ -59,19 +65,35 @@ const $user = createStore<UserEntity | null>(null)
 $user.on(fetchUserFx.doneData, (_, userFetched) => userFetched)
 $user.on(createUser, (_, userPayload) => new UserEntity(userPayload))
 $user.on(updateUser, (state, userPayload) => wrap(state).assign(userPayload))
-$user.on(deleteUser, state => wrap(state).assign({ $forDelete: true }))
+$user.on(deleteUser, state => {
+  // for deleting Entity, just assign `$forDelete` to it
+  return wrap(state).assign({ $forDelete: true })
+})
 
+// `wrapEffectorMikroorm` here just for example
+// Need to use `wrapEffectorMikroorm` as middleware of your framework, see example above
 await wrapEffectorMikroorm(orm, async () => {
+  // `sideEffect` is just little wrapper around Effector `allSettled`
+  // it consider Effector Store mutation inside specific life cycle
   await sideEffect(createUser, { id: 1, name: 'Vasya' })
 })
+
+// By the way, user Vasya already persisted in DB!
 
 await wrapEffectorMikroorm(orm, async () => {
   await fetchUserFx(1)
   await sideEffect(updateUser, { id: 1, name: 'Petya' })
 })
 
+// user Vasya realized that he is Petya in DB now
+
 await wrapEffectorMikroorm(orm, async () => {
   await fetchUserFx(1)
   await sideEffect(deleteUser, 1)
 })
+
+// user Petya go away from DB
 ```
+
+
+
