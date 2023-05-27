@@ -1,6 +1,6 @@
 {
   "name": "effector-mikroorm",
-  "version": "0.0.0",
+  "version": "0.0.22",
   "description": "Persist Effector Stores as MikroORM Entities",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
