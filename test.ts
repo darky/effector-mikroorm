@@ -243,11 +243,11 @@ test('optimistic lock', async () => {
 
 test('ability to set domain outside of wrapEffectorMikroorm', async () => {
   await diInit(async () => {
-    const domain = fork()
-    diSet('effector-mikroorm-domain', domain)
+    const scope = fork()
+    diSet('effector-mikroorm-scope', scope)
     await wrapEffectorMikroorm(orm, async () => {
       await sideEffect(createTestEntity, new TestEntity({ id: 1, value: 'test' }))
     })
-    assert.deepStrictEqual(domain.getState($store), new TestEntity({ id: 1, value: 'test', version: 1 }))
+    assert.deepStrictEqual(scope.getState($store), new TestEntity({ id: 1, value: 'test', version: 1 }))
   })
 })

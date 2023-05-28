@@ -4,7 +4,7 @@ import { fork, allSettled } from 'effector'
 import { inspect } from 'effector/inspect'
 import { diDep, diHas, diInit, diSet } from 'ts-fp-di'
 
-const EFFECTOR_MIKROORM_DOMAIN = 'effector-mikroorm-domain'
+const EFFECTOR_MIKROORM_SCOPE = 'effector-mikroorm-scope'
 const EFFECTOR_MIKROORM_EM = 'effector-mikroorm-em'
 const EFFECTOR_MIKROORM_ENTITIES = 'effector-mikroorm-entities'
 
@@ -19,11 +19,11 @@ type ScopeReg = {
 
 export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void>) => {
   await diInit(async () => {
-    const domain = diHas(EFFECTOR_MIKROORM_DOMAIN) ? diDep<Scope>(EFFECTOR_MIKROORM_DOMAIN) : fork()
+    const scope = diHas(EFFECTOR_MIKROORM_SCOPE) ? diDep<Scope>(EFFECTOR_MIKROORM_SCOPE) : fork()
     let error!: Error
 
     inspect({
-      scope: domain,
+      scope,
       fn: m => {
         m.type === 'error' && (error = m.error as Error)
       },
@@ -31,7 +31,7 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
 
     const em = orm.em.fork()
 
-    diSet(EFFECTOR_MIKROORM_DOMAIN, domain)
+    diSet(EFFECTOR_MIKROORM_SCOPE, scope)
     diSet(EFFECTOR_MIKROORM_EM, em)
     diSet(EFFECTOR_MIKROORM_ENTITIES, new Set(orm.config.get('entities')))
 
@@ -42,7 +42,7 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
     }
 
     persistIfEntity(
-      Object.values((domain as unknown as { reg: ScopeReg }).reg)
+      Object.values((scope as unknown as { reg: ScopeReg }).reg)
         .filter(val => val.meta?.op === 'store')
         .map(val => val.current)
     )
@@ -61,7 +61,7 @@ export function sideEffect<T>(unit: Unit<T>, params?: T): Promise<unknown>
 export async function sideEffect(unit: any, params?: any) {
   const resp = await allSettled(unit, {
     params,
-    scope: diDep<Scope>(EFFECTOR_MIKROORM_DOMAIN),
+    scope: diDep<Scope>(EFFECTOR_MIKROORM_SCOPE),
   })
   if (!is.effect(unit)) {
     return
