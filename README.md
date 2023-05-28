@@ -1,6 +1,6 @@
 # effector-mikroorm
 
-Use MikroORM Entities inside Effector Stores and achieve auto persistance in DB
+Use MikroORM Entities inside Effector Stores and achieve auto persistence in DB
 
 ## Knowledge requirements
 
@@ -24,7 +24,7 @@ app.use(async (ctx, next) => {
 })
 ```
 
-Further, simply use Effector and MikroORM "as is" in code and auto persistance in DB will "magically" works 🪄 <br/>
+Further, simply use Effector and MikroORM "as is" in code and auto persistence in DB will "magically" works 🪄 <br/>
 Only need to use few utils like `em` and `sideEffect`, which can help to consider context of appropriate life cycle
 
 ## Example
@@ -32,7 +32,7 @@ Only need to use few utils like `em` and `sideEffect`, which can help to conside
 ```ts
 import { Entity, PrimaryKey, Property, wrap } from '@mikro-orm/core'
 import { createEffect, createEvent, createStore } from 'effector'
-import { em, entityConstructor, sideEffect, wrapEffectorMikroorm } from 'effector-mikroorm'
+import { em, entityConstructor, onPersist, scope, sideEffect, wrapEffectorMikroorm } from 'effector-mikroorm'
 
 @Entity()
 class UserEntity {
@@ -56,7 +56,7 @@ const fetchUserFx = createEffect(async (id: number) => {
   // need use `em()` everywhere, when you want to use MikroORM API
   return em().findOne(UserEntity, { id })
 })
-const createUser = createEvent<UserEntity>()
+const createUser = createEvent<Partial<UserEntity>>()
 const updateUser = createEvent<UserEntity>()
 const deleteUser = createEvent<number>()
 
@@ -75,7 +75,12 @@ $user.on(deleteUser, state => {
 await wrapEffectorMikroorm(orm, async () => {
   // `sideEffect` is just little wrapper around Effector `allSettled`
   // it consider Effector Store mutation inside specific life cycle
-  await sideEffect(createUser, { id: 1, name: 'Vasya' })
+  await sideEffect(createUser, { name: 'Vasya' })
+  // Optional hook, which will be called after DB persist
+  onPersist(async () => {
+    // `scope` returns Effector Scope related to this life cycle
+    scope().getState($user) // BTW, $user already contains `id`, because it's already persisted in DB
+  })
 })
 
 // By the way, user Vasya already persisted in DB!
