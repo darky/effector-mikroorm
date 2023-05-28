@@ -2,7 +2,7 @@ import { Entity, EventArgs, EventSubscriber, MikroORM, PrimaryKey, Property, wra
 import { defineConfig } from '@mikro-orm/better-sqlite'
 import test, { afterEach, beforeEach } from 'node:test'
 import { combine, createEffect, createEvent, createStore, fork } from 'effector'
-import { em, entityConstructor, scope, sideEffect, wrapEffectorMikroorm } from './index'
+import { em, entityConstructor, onPersist, scope, sideEffect, wrapEffectorMikroorm } from './index'
 import assert from 'node:assert'
 import { diInit, diSet } from 'ts-fp-di'
 
@@ -251,4 +251,26 @@ test('ability to set domain outside of wrapEffectorMikroorm', async () => {
     })
     assert.deepStrictEqual(scp.getState($store), new TestEntity({ id: 1, value: 'test', version: 1 }))
   })
+})
+
+test('onPersist success', async () => {
+  await wrapEffectorMikroorm(orm, async () => {
+    await sideEffect(createTestEntity, new TestEntity({ value: 'test' }))
+    onPersist(async () => {
+      assert.deepStrictEqual(scope().getState($store), new TestEntity({ id: 1, value: 'test', version: 1 }))
+    })
+  })
+})
+
+test('onPersist error', async () => {
+  await assert.rejects(
+    () =>
+      wrapEffectorMikroorm(orm, async () => {
+        await sideEffect(createTestEntity, new TestEntity({ value: 'test' }))
+        onPersist(async () => {
+          throw new Error('test-err')
+        })
+      }),
+    new Error('test-err')
+  )
 })

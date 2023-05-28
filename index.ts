@@ -7,6 +7,7 @@ import { diDep, diHas, diInit, diSet } from 'ts-fp-di'
 const EFFECTOR_MIKROORM_SCOPE = 'effector-mikroorm-scope'
 const EFFECTOR_MIKROORM_EM = 'effector-mikroorm-em'
 const EFFECTOR_MIKROORM_ENTITIES = 'effector-mikroorm-entities'
+const EFFECTOR_MIKROORM_ON_PERSIST_CB = 'effector-mikroorm-on-persist-cb'
 
 type ScopeReg = {
   [key: string]: {
@@ -48,6 +49,10 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
     )
 
     await em.flush()
+
+    if (diHas(EFFECTOR_MIKROORM_ON_PERSIST_CB)) {
+      await diDep<() => Promise<void>>(EFFECTOR_MIKROORM_ON_PERSIST_CB)()
+    }
   })
 }
 
@@ -76,6 +81,10 @@ export const em = () => diDep<EntityManager>(EFFECTOR_MIKROORM_EM)
 
 export const scope = () => diDep<Scope>(EFFECTOR_MIKROORM_SCOPE)
 
+export const onPersist = (cb: () => Promise<void>) => {
+  diSet(EFFECTOR_MIKROORM_ON_PERSIST_CB, cb)
+}
+
 export const entityConstructor = <T extends object>(self: T, ent: T) =>
   Object.entries(ent).forEach(([key, val]) => Reflect.set(self, key, val))
 
@@ -86,7 +95,6 @@ const persistIfEntity = (maybeEntity: unknown) => {
   if (!isEntity(maybeEntity)) {
     return
   }
-
   if (maybeEntity.$forDelete) {
     diDep<EntityManager>(EFFECTOR_MIKROORM_EM).remove(maybeEntity)
   } else {
