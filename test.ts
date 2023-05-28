@@ -1,9 +1,10 @@
 import { Entity, EventArgs, EventSubscriber, MikroORM, PrimaryKey, Property, wrap } from '@mikro-orm/core'
 import { defineConfig } from '@mikro-orm/better-sqlite'
 import test, { afterEach, beforeEach } from 'node:test'
-import { combine, createEffect, createEvent, createStore } from 'effector'
+import { combine, createEffect, createEvent, createStore, fork } from 'effector'
 import { em, entityConstructor, sideEffect, wrapEffectorMikroorm } from './index'
 import assert from 'node:assert'
+import { diInit, diSet } from 'ts-fp-di'
 
 let orm: MikroORM
 let insertedEntitiesViaEvent: unknown[] = []
@@ -237,4 +238,15 @@ test('optimistic lock', async () => {
   assert.strictEqual(persisted?.id, 1)
   assert.strictEqual(persisted?.value, 'test3')
   assert.strictEqual(persisted?.version, 2)
+})
+
+test('ability to set domain outside of wrapEffectorMikroorm', async () => {
+  await diInit(async () => {
+    const domain = fork()
+    diSet('effector-mikroorm-domain', domain)
+    await wrapEffectorMikroorm(orm, async () => {
+      await sideEffect(createTestEntity, new TestEntity({ id: 1, value: 'test' }))
+    })
+    assert.deepStrictEqual(domain.getState($store), new TestEntity({ id: 1, value: 'test', version: 1 }))
+  })
 })

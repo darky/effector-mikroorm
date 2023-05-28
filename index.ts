@@ -2,7 +2,7 @@ import { EntityManager, MikroORM } from '@mikro-orm/core'
 import { Effect, EffectParams, EffectResult, Scope, Unit, is } from 'effector'
 import { fork, allSettled } from 'effector'
 import { inspect } from 'effector/inspect'
-import { diDep, diInit, diSet } from 'ts-fp-di'
+import { diDep, diHas, diInit, diSet } from 'ts-fp-di'
 
 const EFFECTOR_MIKROORM_DOMAIN = 'effector-mikroorm-domain'
 const EFFECTOR_MIKROORM_EM = 'effector-mikroorm-em'
@@ -19,7 +19,7 @@ type ScopeReg = {
 
 export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void>) => {
   await diInit(async () => {
-    const domain = fork()
+    const domain = diHas(EFFECTOR_MIKROORM_DOMAIN) ? diDep<Scope>(EFFECTOR_MIKROORM_DOMAIN) : fork()
     let error!: Error
 
     inspect({
