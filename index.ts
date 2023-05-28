@@ -74,6 +74,8 @@ export async function sideEffect(unit: any, params?: any) {
 
 export const em = () => diDep<EntityManager>(EFFECTOR_MIKROORM_EM)
 
+export const scope = () => diDep<Scope>(EFFECTOR_MIKROORM_SCOPE)
+
 export const entityConstructor = <T extends object>(self: T, ent: T) =>
   Object.entries(ent).forEach(([key, val]) => Reflect.set(self, key, val))
 
