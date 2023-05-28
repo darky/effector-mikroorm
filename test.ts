@@ -161,7 +161,8 @@ test('persistance works for event -> store (deleting case)', async () => {
 
 test('persistance works for fx -> store', async () => {
   await wrapEffectorMikroorm(orm, async () => {
-    await sideEffect(createTestEntityFx)
+    const resp = await sideEffect(createTestEntityFx)
+    assert.deepStrictEqual(resp, new TestEntity({ id: 1, value: 'test' }))
   })
 
   const persisted = await orm.em.fork().findOne(TestEntity, { id: 1 })

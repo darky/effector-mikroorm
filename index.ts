@@ -63,14 +63,13 @@ export async function sideEffect(unit: any, params?: any) {
     params,
     scope: diDep<Scope>(EFFECTOR_MIKROORM_DOMAIN),
   })
-
-  if (is.effect(unit)) {
-    if (resp.status === 'fail') {
-      throw resp.value
-    }
-
-    return resp.value
+  if (!is.effect(unit)) {
+    return
   }
+  if (resp.status === 'fail') {
+    throw resp.value
+  }
+  return resp.value
 }
 
 export const em = () => diDep<EntityManager>(EFFECTOR_MIKROORM_EM)
