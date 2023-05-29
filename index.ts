@@ -18,8 +18,8 @@ type ScopeReg = {
   }
 }
 
-export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void>) => {
-  await diInit(async () => {
+export const wrapEffectorMikroorm = async <T>(orm: MikroORM, cb: () => Promise<T>): Promise<T> => {
+  return await diInit(async () => {
     const scope = diHas(EFFECTOR_MIKROORM_SCOPE) ? diDep<Scope>(EFFECTOR_MIKROORM_SCOPE) : fork()
     let error!: Error
 
@@ -36,7 +36,7 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
     diSet(EFFECTOR_MIKROORM_EM, em)
     diSet(EFFECTOR_MIKROORM_ENTITIES, new Set(orm.config.get('entities')))
 
-    await cb()
+    const resp = await cb()
 
     if (error) {
       throw error
@@ -53,6 +53,8 @@ export const wrapEffectorMikroorm = async (orm: MikroORM, cb: () => Promise<void
     if (diHas(EFFECTOR_MIKROORM_ON_PERSIST_CB)) {
       await diDep<() => Promise<void>>(EFFECTOR_MIKROORM_ON_PERSIST_CB)()
     }
+
+    return resp
   })
 }
 

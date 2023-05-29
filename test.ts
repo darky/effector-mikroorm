@@ -274,3 +274,8 @@ test('onPersist error', async () => {
     new Error('test-err')
   )
 })
+
+test('wrapEffectorMikroorm response', async () => {
+  const resp = await wrapEffectorMikroorm(orm, async () => 'test')
+  assert.strictEqual(resp, 'test')
+})
